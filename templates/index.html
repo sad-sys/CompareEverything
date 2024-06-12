@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/static/index.css?v=1.0">
+    <title>Check Yourself</title>
+</head>
+<body>
+    <p>Compare</p>
+    <div>
+        <div class='slideshowComponent'>
+            <div class="slide">
+                <p>Salaries</p>
+            </div>
+        </div>
+        <div class='slideshowComponent'>
+            <div class="slide">
+                <p>Height</p>
+            </div>
+        </div>
+        <div class='slideshowComponent'>
+            <div class="slide">
+                <p>Grades</p>
+            </div>
+        </div>
+        <div class='slideshowComponent'>
+            <div class="slide">
+                <p>Skills</p>
+            </div>
+        </div>
+        <div class='slideshowComponent'>
+            <div class="slide">
+                <p>Everything</p>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    let slideIndex = 0;
+
+    function showSlides() {
+        let i;
+
+        let slides = document.getElementsByClassName("slideshowComponent");
+        console.log(slideIndex);
+
+        for (i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+
+        slides[slideIndex].style.display = 'block';
+        slideIndex++;
+        if (slideIndex >= slides.length - 1) {
+            setTimeout(showSlides, 350);
+            slideIndex = slides.length - 1; // Keep "Everything" as the final slide
+        } else {
+            setTimeout(showSlides, 2000 / slideIndex);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        showSlides();
+    });
+</script>
+</html>
