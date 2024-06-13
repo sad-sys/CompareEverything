@@ -3,13 +3,17 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-
-	//"html/template"
-	//"net/http"
+	"html/template"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 )
+
+type gradeInfo struct {
+	subject string
+	grade   string
+}
 
 func findGrade(record []string, grade string) float64 {
 	grades := [7]string{"A*", "A", "B", "C", "D", "E", "U"}
@@ -38,7 +42,7 @@ func searchRecords(word string, record []string) bool {
 	return false
 }
 
-func convertToCsv(fileName string) [][]string {
+func convertToCsv(fileName string, subject string, grade string) (float64, []string) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error", err)
@@ -50,36 +54,51 @@ func convertToCsv(fileName string) [][]string {
 		} else {
 			for _, record := range records {
 				fmt.Println(record)
-				contains := searchRecords("CHEMISTRY", record)
-				fmt.Println(contains)
+				contains := searchRecords(subject, record)
 				if contains {
-					counter := findGrade(record, "A*")
+					counter := findGrade(record, grade)
 					fmt.Println(counter)
+					return counter, record
 				}
 			}
 		}
-		return nil
 	}
-	return nil
+	return -1.0, []string{"7127", "ACCOUNTING ADV", "2314", "1.8", "13.8", "34.8", "58.9", "79.2", "93.7", "100.0"}
 }
 
 func main() {
 
-	convertToCsv("results.csv")
-	fmt.Println("===============================")
+	counter := 0.0
+	record := []string{"7127", "ACCOUNTING ADV", "2314", "1.8", "13.8", "34.8", "58.9", "79.2", "93.7", "100.0"}
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	/*
-		fs := http.FileServer(http.Dir("./static"))
-		http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			tmpl, err := template.ParseFiles("templates/index.html")
-			tmpl.Execute(w, nil)
-			if err != nil {
-				fmt.Println(err)
-			}
-		})
-		fmt.Println("Server Running at LocalHost")
-		http.ListenAndServe(":8080", nil)
-	*/
+		if err := r.ParseForm(); err != nil {
+			fmt.Println(err)
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		details := gradeInfo{
+			subject: r.FormValue("subject"),
+			grade:   r.FormValue("grade"),
+		}
+		counter, record = convertToCsv("results.csv", details.subject, details.grade)
+		fmt.Println("===============================")
+		fmt.Println(details)
+
+		tmpl, err := template.ParseFiles("templates/index.html")
+		tmpl.Execute(w, nil)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(counter, record)
+
+	})
+	fmt.Println("Server Running at LocalHost")
+	http.ListenAndServe(":8080", nil)
+
 }
