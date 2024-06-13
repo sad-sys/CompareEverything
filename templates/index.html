@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="/static/index.css?v=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <title>Check Yourself</title>
 </head>
 <body>
@@ -38,17 +40,21 @@
     </div>
 
     <div>
-        <form method = "POST">
-            <label> Subject: </label>
-            <input type = "text" name = "subject">
-            <label> Grade: </label>
-            <input type = "text" name = "grade">
-            <button type = "submit">submit</button>
+        <form method="POST">
+            <label>Subject:</label>
+            <input type="text" name="subject">
+            <label>Grade:</label>
+            <input type="text" name="grade">
+            <button type="submit">Submit</button>
         </form>
     </div>
-
     <div>
-        <canvas id="rateSelf" width=30vh height=40vh></canvas>
+        {{if .Show}}
+            <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
+        {{end}}
+    </div>
+    <div>
+        <canvas id="rateSelf" width="30vh" height="40vh"></canvas>
     </div>
 
 </body>
@@ -57,7 +63,6 @@
 
     function showSlides() {
         let i;
-
         let slides = document.getElementsByClassName("slideshowComponent");
         console.log(slideIndex);
 
@@ -73,7 +78,6 @@
         } else {
             setTimeout(showSlides, 2000 / slideIndex);
         }
-
     }
 
     document.addEventListener('DOMContentLoaded', (event) => {

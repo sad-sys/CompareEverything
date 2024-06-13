@@ -11,14 +11,14 @@ import (
 )
 
 type gradeInfo struct {
-	subject string
-	grade   string
+	Subject string
+	Grade   string
+	Show    bool
+	Percent float64
 }
 
 func findGrade(record []string, grade string) float64 {
 	grades := [7]string{"A*", "A", "B", "C", "D", "E", "U"}
-
-	counter := 0.0
 
 	for j := 0; j < len(grades); j++ {
 		if grade == grades[j] {
@@ -26,11 +26,10 @@ func findGrade(record []string, grade string) float64 {
 			if err != nil {
 				fmt.Println(err)
 			}
-			counter = counter + percentile
+			return percentile
 		}
 	}
-
-	return counter
+	return 0.0
 }
 
 func searchRecords(word string, record []string) bool {
@@ -46,59 +45,66 @@ func convertToCsv(fileName string, subject string, grade string) (float64, []str
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error", err)
-	} else {
-		reader := csv.NewReader(file)
-		records, errReader := reader.ReadAll()
-		if errReader != nil {
-			fmt.Println("Error reader", errReader)
-		} else {
-			for _, record := range records {
-				fmt.Println(record)
-				contains := searchRecords(subject, record)
-				if contains {
-					counter := findGrade(record, grade)
-					fmt.Println(counter)
-					return counter, record
-				}
-			}
+		return -1.0, nil
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println("Error reader", err)
+		return -1.0, nil
+	}
+
+	for _, record := range records {
+		if searchRecords(subject, record) {
+			counter := findGrade(record, grade)
+			return counter, record
 		}
 	}
-	return -1.0, []string{"7127", "ACCOUNTING ADV", "2314", "1.8", "13.8", "34.8", "58.9", "79.2", "93.7", "100.0"}
+
+	return -1.0, nil
 }
 
 func main() {
-
-	counter := 0.0
-	record := []string{"7127", "ACCOUNTING ADV", "2314", "1.8", "13.8", "34.8", "58.9", "79.2", "93.7", "100.0"}
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		details := gradeInfo{
+			Show: false,
+		}
 
-		if err := r.ParseForm(); err != nil {
+		if r.Method == http.MethodPost {
+			if err := r.ParseForm(); err != nil {
+				fmt.Println(err)
+				http.Error(w, "Unable to parse form", http.StatusBadRequest)
+				return
+			}
+
+			details.Subject = r.FormValue("subject")
+			details.Grade = r.FormValue("grade")
+
+			details.Percent, _ = convertToCsv("results.csv", details.Subject, details.Grade)
+			if details.Percent > 0 {
+				details.Show = true
+			}
+		}
+
+		tmpl, err := template.ParseFiles("templates/index.html")
+		if err != nil {
 			fmt.Println(err)
-			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			http.Error(w, "Unable to load template", http.StatusInternalServerError)
 			return
 		}
 
-		details := gradeInfo{
-			subject: r.FormValue("subject"),
-			grade:   r.FormValue("grade"),
-		}
-		counter, record = convertToCsv("results.csv", details.subject, details.grade)
-		fmt.Println("===============================")
-		fmt.Println(details)
-
-		tmpl, err := template.ParseFiles("templates/index.html")
-		tmpl.Execute(w, nil)
+		err = tmpl.Execute(w, details)
 		if err != nil {
 			fmt.Println(err)
+			http.Error(w, "Unable to render template", http.StatusInternalServerError)
 		}
-
-		fmt.Println(counter, record)
-
 	})
+
 	fmt.Println("Server Running at LocalHost")
 	http.ListenAndServe(":8080", nil)
-
 }
