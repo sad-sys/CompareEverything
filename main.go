@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -15,6 +16,48 @@ type gradeInfo struct {
 	Grade   string
 	Show    bool
 	Percent float64
+}
+
+type Response struct {
+	Message string `json:"message"`
+}
+
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	details := gradeInfo{
+		Subject: r.FormValue("subject"),
+		Grade:   r.FormValue("grade"),
+		Show:    false,
+	}
+
+	record := []string{}
+	// Process the form data
+	details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade)
+	if details.Percent > 0 {
+		details.Show = true
+		fmt.Println(record)
+		fmt.Println(details)
+	}
+
+	// Prepare the response message
+	var response Response
+	if details.Show {
+		response.Message = fmt.Sprintf("Your Grade Puts you into the top: %.2f%% in %s", details.Percent, details.Subject)
+	} else {
+		response.Message = "Grade not found or invalid."
+	}
+
+	// Set Content-Type to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Encode the response as JSON and send it
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
+	}
 }
 
 func findGrade(record []string, grade string) float64 {
@@ -41,11 +84,11 @@ func searchRecords(word string, record []string) bool {
 	return false
 }
 
-func convertToCsv(fileName string, subject string, grade string) (float64, []string) {
+func convertToCsv(fileName string, subject string, grade string) (float64, []string, string) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error", err)
-		return -1.0, nil
+		return -1.0, nil, "nil"
 	}
 	defer file.Close()
 
@@ -53,23 +96,24 @@ func convertToCsv(fileName string, subject string, grade string) (float64, []str
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println("Error reader", err)
-		return -1.0, nil
+		return -1.0, nil, subject
 	}
 
 	for _, record := range records {
 		if searchRecords(subject, record) {
 			counter := findGrade(record, grade)
-			return counter, record
+			subject = record[1]
+			return counter, record, subject
 		}
 	}
 
-	return -1.0, nil
+	return -1.0, nil, subject
 }
 
 func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-
+	http.HandleFunc("/submit", formHandler)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		details := gradeInfo{
 			Show: false,
@@ -85,9 +129,12 @@ func main() {
 			details.Subject = r.FormValue("subject")
 			details.Grade = r.FormValue("grade")
 
-			details.Percent, _ = convertToCsv("results.csv", details.Subject, details.Grade)
+			record := []string{}
+			details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade)
 			if details.Percent > 0 {
 				details.Show = true
+				fmt.Println(record)
+				fmt.Println(details)
 			}
 		}
 

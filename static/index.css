@@ -1,11 +1,84 @@
-body{
-    background-color: yellow;
-    text-align: center;
-    color: black;
-    margin-top: 10vh; 
-    margin-left: 20vh;
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: #333;
 }
-p{
-    font-size: 2vh;
-    font-family: 'Monteserrat', sans-serif;
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0.5em 0;
+    text-align: center;
+}
+
+p {
+    font-size: 1.2em;
+    text-align: center;
+}
+
+.form-container {
+    margin: 2em 0;
+    text-align: center;
+}
+
+form {
+    display: inline-block;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin: 0.5em 0 0.2em;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 0.5em;
+    margin-bottom: 1em;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button {
+    padding: 0.7em 1.5em;
+    border: none;
+    border-radius: 4px;
+    background-color: #ff7f50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #ff6347;
+}
+
+.slideshowComponent {
+    display: none;
+    text-align: center;
+}
+
+.slide {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.result {
+    margin: 2em 0;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+.canvas-container {
+    margin: 2em 0;
 }

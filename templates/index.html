@@ -10,50 +10,54 @@
     <title>Check Yourself</title>
 </head>
 <body>
+    <h1>Check Yourself</h1>
     <p>Compare</p>
-    <div>
-        <div class='slideshowComponent'>
-            <div class="slide">
-                <p>Salaries</p>
-            </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Salaries</h2>
         </div>
-        <div class='slideshowComponent'>
-            <div class="slide">
-                <p>Height</p>
-            </div>
+    </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Height</h2>
         </div>
-        <div class='slideshowComponent'>
-            <div class="slide">
-                <p>Grades</p>
-            </div>
+    </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Grades</h2>
         </div>
-        <div class='slideshowComponent'>
-            <div class="slide">
-                <p>Skills</p>
-            </div>
+    </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Weight</h2>
         </div>
-        <div class='slideshowComponent'>
-            <div class="slide">
-                <p>Everything</p>
-            </div>
+    </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Skills</h2>
+        </div>
+    </div>
+    <div class="slideshowComponent">
+        <div class="slide">
+            <h2>Everything</h2>
         </div>
     </div>
 
-    <div>
-        <form method="POST">
-            <label>Subject:</label>
-            <input type="text" name="subject">
-            <label>Grade:</label>
-            <input type="text" name="grade">
+    <div class="form-container">
+        <form method="POST" action="/submit" id="theForm">
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject">
+            <label for="grade">Grade:</label>
+            <input type="text" id="grade" name="grade">
             <button type="submit">Submit</button>
         </form>
     </div>
-    <div>
+    <div class="result" id="details">
         {{if .Show}}
             <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
         {{end}}
     </div>
-    <div>
+    <div class="canvas-container">
         <canvas id="rateSelf" width="30vh" height="40vh"></canvas>
     </div>
 
@@ -61,11 +65,27 @@
 <script>
     let slideIndex = 0;
 
+    document.getElementById('theForm').addEventListener('submit', function(event){
+    event.preventDefault();
+
+    let formData = new FormData(this);
+    fetch('/submit', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('details').innerText = data.message;
+    })
+    .catch(error => {
+        document.getElementById('details').innerText = 'Error: ' + error;
+    });
+});
+
+
     function showSlides() {
         let i;
         let slides = document.getElementsByClassName("slideshowComponent");
-        console.log(slideIndex);
-
         for (i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
