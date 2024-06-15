@@ -9,6 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <title>Check Yourself</title>
 </head>
+<style>
+    .AddComparison:hover{
+        background-color: #3b88d5;
+    }
+</style>
 <body>
     <h1>Check Yourself</h1>
     <p>Compare</p>
@@ -43,26 +48,36 @@
         </div>
     </div>
 
-    <div class="form-container">
-        <form method="POST" action="/submit" id="theForm">
-            <label for="subject">Subject:</label>
-            <input type="text" id="subject" name="subject">
-            <label for="grade">Grade:</label>
-            <input type="text" id="grade" name="grade">
-            <button type="submit">Submit</button>
-        </form>
+    <div class="form-container" id="form-container">
+        <div id="individualForm">
+            <form method="POST" action="/submit" id="theForm">
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject">
+                <label for="grade">Grade:</label>
+                <input type="text" id="grade" name="grade">
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+        <div class="result" id="details">
+            {{if .Show}}
+                <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
+            {{end}}
+        </div>
     </div>
-    <div class="result" id="details">
-        {{if .Show}}
-            <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
-        {{end}}
-    </div>
+
     <div class="canvas-container">
         <canvas id="rateSelf" width="30vh" height="40vh"></canvas>
     </div>
 
+    <div class="AddComparison" id = "addComparison">
+        <button type="submit" style="margin-bottom: 10vh;"> Add New Thing to compare against  </button>
+    </div>
+
 </body>
 <script>
+
+    document.getElementById('addComparison').addEventListener('click', addComponents);
+
     let slideIndex = 0;
 
     document.getElementById('theForm').addEventListener('submit', function(event){
@@ -82,26 +97,78 @@
     });
 });
 
+function addComponents() {
 
-    function showSlides() {
-        let i;
-        let slides = document.getElementsByClassName("slideshowComponent");
-        for (i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-        }
+    let form = document.createElement('form');
+    form.setAttribute('method', 'post');
+    form.setAttribute('action', '/submit');
+    form.setAttribute('id', 'theForm')
+    form.classList.add('form');
 
-        slides[slideIndex].style.display = 'block';
-        slideIndex++;
-        if (slideIndex >= slides.length - 1) {
-            setTimeout(showSlides, 350);
-            slideIndex = slides.length - 1; // Keep "Everything" as the final slide
-        } else {
-            setTimeout(showSlides, 2000 / slideIndex);
-        }
+    let subjectLabel = document.createElement('label');
+    subjectLabel.textContent = 'Subject: ';
+    subjectLabel.setAttribute('for','subject')
+
+    let subjectInput = document.createElement('input')
+    subjectInput.setAttribute('type', 'text')
+    subjectInput.setAttribute('id', 'subject')
+    subjectInput.setAttribute('name', 'subject')
+
+    form.appendChild(subjectLabel);
+    form.appendChild(subjectInput);
+
+    let gradeLabel = document.createElement('label');
+    gradeLabel.textContent = 'Grade: ';
+    gradeLabel.setAttribute('for','grade')
+
+    let gradeInput = document.createElement('input')
+    gradeInput.setAttribute('type', 'text');
+    gradeInput.setAttribute('id', 'grade');
+    gradeInput.setAttribute('name', 'grade');
+
+    form.appendChild(gradeLabel);
+    form.appendChild(gradeInput);
+
+    let break1 = document.createElement('br')
+
+    const submitButton = document.createElement('button');
+    submitButton.setAttribute('type', 'submit');
+    submitButton.textContent = 'Submit';
+
+    form.appendChild(submitButton)
+    document.getElementById('form-container').appendChild(form)
+
+
+    document.getElementById('form-container').appendChild(break1)
+    document.getElementById('form-container').appendChild(break1)
+    document.getElementById('form-container').appendChild(break1)
+    
+
+    
+    
+
+    console.log("Button Clicked")
+}
+
+function showSlides() {
+    let i;
+    let slides = document.getElementsByClassName("slideshowComponent");
+    for (i = 0; i < slides.length; i++) {
+        slides[i].style.display = "none";
     }
 
-    document.addEventListener('DOMContentLoaded', (event) => {
-        showSlides();
-    });
+    slides[slideIndex].style.display = 'block';
+    slideIndex++;
+    if (slideIndex >= slides.length - 1) {
+        setTimeout(showSlides, 350);
+        slideIndex = slides.length - 1; // Keep "Everything" as the final slide
+    } else {
+        setTimeout(showSlides, 2000 / slideIndex);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    showSlides();
+});
 </script>
 </html>

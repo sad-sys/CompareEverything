@@ -22,15 +22,15 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func formHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
+type pageData struct {
+	Results []gradeInfo
+}
+
+func multipleForms (subject string, grade string) Response {
 
 	details := gradeInfo{
-		Subject: r.FormValue("subject"),
-		Grade:   r.FormValue("grade"),
+		Subject: subject,
+		Grade:   grade,
 		Show:    false,
 	}
 
@@ -51,6 +51,21 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 		response.Message = "Grade not found or invalid."
 	}
 
+	return response 
+
+}
+
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	subject := r.FormValue("subject")
+	grade   := r.FormValue("grade")
+
+	response := multipleForms(subject,grade)
+
 	// Set Content-Type to application/json
 	w.Header().Set("Content-Type", "application/json")
 
@@ -58,6 +73,8 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
+
+
 }
 
 func findGrade(record []string, grade string) float64 {
