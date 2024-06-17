@@ -26,7 +26,7 @@ type pageData struct {
 	Results []gradeInfo
 }
 
-func multipleForms (subject string, grade string) Response {
+func multipleForms(subject string, grade string) (Response, gradeInfo) {
 
 	details := gradeInfo{
 		Subject: subject,
@@ -51,8 +51,29 @@ func multipleForms (subject string, grade string) Response {
 		response.Message = "Grade not found or invalid."
 	}
 
-	return response 
+	return response, details
+}
 
+var allDetails = []gradeInfo{}
+
+func allDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+	allDetails = []gradeInfo{}
+
+
+	allPercentage := 0.0
+
+	for i := 0; i < len(allDetails); i++ {
+		percentage := float64(allDetails[i].Percent)
+		allPercentage = allPercentage + percentage
+		fmt.Println(percentage)
+		fmt.Println(allPercentage)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func formHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,18 +83,29 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	subject := r.FormValue("subject")
-	grade   := r.FormValue("grade")
+	grade := r.FormValue("grade")
 
-	response := multipleForms(subject,grade)
+	response, details := multipleForms(subject, grade)
+	allDetails = append(allDetails, details)
 
-	// Set Content-Type to application/json
+	allPercentage := 0.0
+
+	for i := 0; i < len(allDetails); i++ {
+		percentage := float64(allDetails[i].Percent)
+		allPercentage = allPercentage + percentage
+		fmt.Println(percentage)
+		fmt.Println(allPercentage)
+
+	}
+	finalPercentage := allPercentage / float64(len(allDetails))
+	finalPercentage = finalPercentage * 100
+	fmt.Println(finalPercentage)
 	w.Header().Set("Content-Type", "application/json")
 
 	// Encode the response as JSON and send it
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
-
 
 }
 
@@ -131,6 +163,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/submit", formHandler)
+	http.HandleFunc("/submitNewForm", allDetailsHandler)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		details := gradeInfo{
 			Show: false,

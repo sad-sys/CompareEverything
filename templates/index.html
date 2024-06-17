@@ -75,11 +75,9 @@
 
 </body>
 <script>
-
     document.getElementById('addComparison').addEventListener('click', addComponents);
 
     let slideIndex = 0;
-
     document.getElementById('theForm').addEventListener('submit', function(event){
     event.preventDefault();
 
@@ -171,6 +169,7 @@ function addComponents() {
         .then(response => response.json())
         .then(data => {
             document.getElementById(resultId).innerText = data.message;
+            getAverage()
         })
         .catch(error => {
             document.getElementById(resultId).innerText = 'Error: ' + error;
@@ -196,6 +195,40 @@ function showSlides() {
         setTimeout(showSlides, 2000 / slideIndex);
     }
 }
+
+function getAverage(){
+    let elements = document.getElementsByClassName('result');
+    const regex = /-?\d+(\.\d+)?/g;
+    let total = 0.0;
+    let count = 0;
+
+    for (let element of elements) {
+        console.log(element.textContent);
+        let match = element.textContent.match(regex);
+        if (match) {
+            let value = parseFloat(match[0]);
+            if (!isNaN(value)) {
+                total += value;
+                count++;
+            }
+            console.log(value);
+        }
+    }
+
+    if (count > 0) {
+        let newAvg = total / count;
+        console.log("New Average", newAvg);
+
+        let newAvgElement = document.createElement('p');
+        newAvgElement.textContent = "Your Average across all is " + newAvg;
+
+        // Append the newAvgElement to an appropriate container in the DOM
+        document.getElementById('form-container').appendChild(newAvgElement);
+    } else {
+        console.log("No valid data found to calculate the average.");
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', (event) => {
     showSlides();
