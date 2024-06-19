@@ -13,6 +13,8 @@
     .AddComparison:hover{
         background-color: #3b88d5;
     }
+
+    
 </style>
 <body>
     <h1>Check Yourself</h1>
@@ -63,6 +65,10 @@
                 <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
             {{end}}
         </div>
+    </div>
+
+    <div id = "avgElement" class = "avgElement" style="display: block;">
+        <p></p>
     </div>
 
     <div class="canvas-container">
@@ -215,17 +221,15 @@ function getAverage(){
         }
     }
 
-    if (count > 0) {
-        let newAvg = total / count;
-        console.log("New Average", newAvg);
+    if (count > 0){
+        let avgElementNum = total / count;
+        console.log("New Average", avgElementNum)
+        
+        avgElement = document.getElementById("avgElement");
 
-        let newAvgElement = document.createElement('p');
-        newAvgElement.textContent = "Your Average across all is " + newAvg;
+        avgElement.textContent = "Your Avg across all is " + avgElementNum;
 
-        // Append the newAvgElement to an appropriate container in the DOM
-        document.getElementById('form-container').appendChild(newAvgElement);
-    } else {
-        console.log("No valid data found to calculate the average.");
+
     }
 }
 

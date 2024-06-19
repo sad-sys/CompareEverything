@@ -26,6 +26,10 @@ type pageData struct {
 	Results []gradeInfo
 }
 
+func chooseSubject (){
+	
+}
+
 func multipleForms(subject string, grade string) (Response, gradeInfo) {
 
 	details := gradeInfo{
@@ -201,7 +205,7 @@ func main() {
 			http.Error(w, "Unable to render template", http.StatusInternalServerError)
 		}
 	})
-
+ 
 	fmt.Println("Server Running at LocalHost")
 	http.ListenAndServe(":8080", nil)
 }
