@@ -94,25 +94,42 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 
 // findIQ finds the percentile for the given IQ value from the CSV record
 func findIQ(record []string, iq string) float64 {
+	fmt.Printf("Received IQ value: %s\n", iq)
 	iqValue, err := strconv.Atoi(iq)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error converting IQ value to integer:", err)
 		return -1.0
 	}
 
 	// IQ thresholds and corresponding CSV columns
 	iqThresholds := []int{145, 130, 115, 100, 85, 70, 55}
+	percentiles := make([]float64, len(iqThresholds)+1)
+	for i := range iqThresholds {
+		percentiles[i], err = strconv.ParseFloat(record[i+3], 64)
+		if err != nil {
+			fmt.Println("Error parsing percentile from record:", err)
+			return -1.0
+		}
+		fmt.Printf("Threshold: %d, Percentile: %f\n", iqThresholds[i], percentiles[i])
+	}
+	// Handling the lowest threshold case separately
+	percentiles[len(iqThresholds)], err = strconv.ParseFloat(record[len(record)-1], 64)
+	if err != nil {
+		fmt.Println("Error parsing the lowest threshold percentile from record:", err)
+		return -1.0
+	}
+
+	// Iterate through thresholds to find the correct percentile
 	for i, threshold := range iqThresholds {
 		if iqValue >= threshold {
-			percentile, err := strconv.ParseFloat(record[i+3], 64)
-			if err != nil {
-				fmt.Println(err)
-				return -1.0
-			}
-			return percentile
+			fmt.Printf("IQ value %d is greater than or equal to threshold %d, returning percentile %f\n", iqValue, threshold, percentiles[i])
+			return percentiles[i]
 		}
 	}
-	return -1.0
+
+	// If the IQ value is less than the lowest threshold, return the highest percentile (closest to 100)
+	fmt.Println("IQ value is less than the lowest threshold, returning highest percentile")
+	return percentiles[len(iqThresholds)]
 }
 
 // findGrade finds the percentile for the given grade from the CSV record
