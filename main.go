@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// gradeInfo struct holds the subject, grade, whether to show the result, and the calculated percentile
 type gradeInfo struct {
 	Subject string
 	Grade   string
@@ -18,30 +19,37 @@ type gradeInfo struct {
 	Percent float64
 }
 
+// Response struct holds the message to be returned as JSON response
 type Response struct {
 	Message string `json:"message"`
 }
 
-type pageData struct {
-	Results []gradeInfo
-}
+// allDetails holds all the grade information for multiple submissions
+var allDetails = []gradeInfo{}
 
-func chooseSubject (){
-	
-}
-
-func multipleForms(subject string, grade string) (Response, gradeInfo) {
-
+// multipleForms processes the form input and determines the percentile
+func multipleForms(subject string, grade string, formType string) (Response, gradeInfo) {
+	// Initialize a new gradeInfo instance
 	details := gradeInfo{
 		Subject: subject,
 		Grade:   grade,
 		Show:    false,
 	}
 
-	record := []string{}
-	// Process the form data
-	details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade)
-	if details.Percent > 0 {
+	var record []string
+	// Determine which CSV file to use based on form type
+	if formType == "IQ" {
+		details.Percent, record, details.Subject = convertToCsv("iq.csv", details.Subject, details.Grade, formType)
+	} else {
+		details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade, formType)
+	}
+
+	// Print the record and details for debugging
+	fmt.Printf("Record: %v\n", record)
+	fmt.Printf("Details: %+v\n", details)
+
+	// Show the result if the percentile is valid
+	if details.Percent >= 0 {
 		details.Show = true
 		fmt.Println(record)
 		fmt.Println(details)
@@ -50,84 +58,88 @@ func multipleForms(subject string, grade string) (Response, gradeInfo) {
 	// Prepare the response message
 	var response Response
 	if details.Show {
-		response.Message = fmt.Sprintf("Your Grade Puts you into the top: %.2f%% in %s", details.Percent, details.Subject)
+		response.Message = fmt.Sprintf("Your %s puts you into the top: %.2f%% in %s", formType, details.Percent, details.Subject)
 	} else {
-		response.Message = "Grade not found or invalid."
+		response.Message = fmt.Sprintf("%s not found or invalid.", formType)
 	}
 
 	return response, details
 }
 
-var allDetails = []gradeInfo{}
-
-func allDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
-	allDetails = []gradeInfo{}
-
-
-	allPercentage := 0.0
-
-	for i := 0; i < len(allDetails); i++ {
-		percentage := float64(allDetails[i].Percent)
-		allPercentage = allPercentage + percentage
-		fmt.Println(percentage)
-		fmt.Println(allPercentage)
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
+// formHandler handles the form submission and processes the input
 func formHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	subject := r.FormValue("subject")
-	grade := r.FormValue("grade")
+	// Read form values
+	formType := r.FormValue("formType")
+	subject := strings.ToUpper(r.FormValue("subject"))
+	grade := strings.ToUpper(r.FormValue("grade"))
 
-	response, details := multipleForms(subject, grade)
+	// Print form values for debugging
+	fmt.Printf("Form Type: %s, Subject: %s, Grade: %s\n", formType, subject, grade)
+
+	// Process the form and get the response and details
+	response, details := multipleForms(subject, grade, formType)
 	allDetails = append(allDetails, details)
 
-	allPercentage := 0.0
-
-	for i := 0; i < len(allDetails); i++ {
-		percentage := float64(allDetails[i].Percent)
-		allPercentage = allPercentage + percentage
-		fmt.Println(percentage)
-		fmt.Println(allPercentage)
-
-	}
-	finalPercentage := allPercentage / float64(len(allDetails))
-	finalPercentage = finalPercentage * 100
-	fmt.Println(finalPercentage)
+	// Set response header and encode the response as JSON
 	w.Header().Set("Content-Type", "application/json")
-
-	// Encode the response as JSON and send it
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
-
 }
 
-func findGrade(record []string, grade string) float64 {
-	grades := [7]string{"A*", "A", "B", "C", "D", "E", "U"}
+// findIQ finds the percentile for the given IQ value from the CSV record
+func findIQ(record []string, iq string) float64 {
+	iqValue, err := strconv.Atoi(iq)
+	if err != nil {
+		fmt.Println(err)
+		return -1.0
+	}
 
-	for j := 0; j < len(grades); j++ {
-		if grade == grades[j] {
-			percentile, err := strconv.ParseFloat(record[j+3], 64)
+	// IQ thresholds and corresponding CSV columns
+	iqThresholds := []int{145, 130, 115, 100, 85, 70, 55}
+	for i, threshold := range iqThresholds {
+		if iqValue >= threshold {
+			percentile, err := strconv.ParseFloat(record[i+3], 64)
 			if err != nil {
 				fmt.Println(err)
+				return -1.0
 			}
 			return percentile
 		}
 	}
-	return 0.0
+	return -1.0
 }
 
+// findGrade finds the percentile for the given grade from the CSV record
+func findGrade(record []string, grade string) float64 {
+	grades := map[string]int{
+		"A*": 3,
+		"A":  4,
+		"B":  5,
+		"C":  6,
+		"D":  7,
+		"E":  8,
+		"U":  9,
+	}
+
+	// Get the index of the grade column and retrieve the percentile
+	if index, ok := grades[grade]; ok {
+		percentile, err := strconv.ParseFloat(record[index], 64)
+		if err != nil {
+			fmt.Println(err)
+			return -1.0
+		}
+		return percentile
+	}
+	return -1.0
+}
+
+// searchRecords checks if the word exists in the CSV record
 func searchRecords(word string, record []string) bool {
 	for _, field := range record {
 		if strings.Contains(field, word) {
@@ -137,26 +149,43 @@ func searchRecords(word string, record []string) bool {
 	return false
 }
 
-func convertToCsv(fileName string, subject string, grade string) (float64, []string, string) {
+// convertToCsv reads the CSV file and finds the corresponding percentile
+func convertToCsv(fileName string, subject string, grade string, formType string) (float64, []string, string) {
+	// Open the CSV file
 	file, err := os.Open(fileName)
 	if err != nil {
-		fmt.Println("Error", err)
+		fmt.Printf("Error opening file %s: %v\n", fileName, err)
 		return -1.0, nil, "nil"
 	}
 	defer file.Close()
 
+	// Read the CSV file
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println("Error reader", err)
+		fmt.Printf("Error reading CSV file %s: %v\n", fileName, err)
 		return -1.0, nil, subject
 	}
 
+	// Print the records for debugging
+	fmt.Printf("Records from %s: %v\n", fileName, records)
+
+	// Process each record
 	for _, record := range records {
-		if searchRecords(subject, record) {
-			counter := findGrade(record, grade)
-			subject = record[1]
-			return counter, record, subject
+		fmt.Printf("Processing record: %v\n", record)
+
+		if formType == "IQ" && len(record) >= 10 {
+			if record[1] == "IQ" { // Match the type field for IQ
+				counter := findIQ(record, grade)
+				subject = record[1]
+				return counter, record, subject
+			}
+		} else if formType == "A-Level" && len(record) >= 10 {
+			if searchRecords(subject, record) {
+				counter := findGrade(record, grade)
+				subject = record[1]
+				return counter, record, subject
+			}
 		}
 	}
 
@@ -164,34 +193,20 @@ func convertToCsv(fileName string, subject string, grade string) (float64, []str
 }
 
 func main() {
+	// Serve static files
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Handle form submission
 	http.HandleFunc("/submit", formHandler)
-	http.HandleFunc("/submitNewForm", allDetailsHandler)
+
+	// Handle the main page
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		details := gradeInfo{
 			Show: false,
 		}
 
-		if r.Method == http.MethodPost {
-			if err := r.ParseForm(); err != nil {
-				fmt.Println(err)
-				http.Error(w, "Unable to parse form", http.StatusBadRequest)
-				return
-			}
-
-			details.Subject = r.FormValue("subject")
-			details.Grade = r.FormValue("grade")
-
-			record := []string{}
-			details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade)
-			if details.Percent > 0 {
-				details.Show = true
-				fmt.Println(record)
-				fmt.Println(details)
-			}
-		}
-
+		// Parse and execute the template
 		tmpl, err := template.ParseFiles("templates/index.html")
 		if err != nil {
 			fmt.Println(err)
@@ -205,7 +220,8 @@ func main() {
 			http.Error(w, "Unable to render template", http.StatusInternalServerError)
 		}
 	})
- 
+
+	// Start the server
 	fmt.Println("Server Running at LocalHost")
 	http.ListenAndServe(":8080", nil)
 }

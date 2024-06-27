@@ -1,0 +1,1 @@
+1) When a function is clicked based on whether it says IQ, or A Level it triggers the next thing

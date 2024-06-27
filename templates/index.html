@@ -10,11 +10,9 @@
     <title>Check Yourself</title>
 </head>
 <style>
-    .AddComparison:hover{
+    .AddComparison:hover {
         background-color: #3b88d5;
     }
-
-    
 </style>
 <body>
     <h1>Check Yourself</h1>
@@ -50,24 +48,19 @@
         </div>
     </div>
 
-    <div class="form-container" id="form-container">
-        <div id="individualForm">
-            <form method="POST" action="/submit" id="theForm">
-                <label for="subject">Subject:</label>
-                <input type="text" id="subject" name="subject">
-                <label for="grade">Grade:</label>
-                <input type="text" id="grade" name="grade">
-                <button type="submit">Submit</button>
-            </form>
-        </div>
-        <div class="result" id="details">
-            {{if .Show}}
-                <p>Your Grade Puts you into the top: {{.Percent}}% in {{.Subject}}</p>
-            {{end}}
-        </div>
+    <div class="form-chooser" id="form-chooser">
+        <select id="form-select" onchange="formChange(this)">
+            <option id="Null" value="Null"></option>
+            <option id="IQ" value="IQ">IQ</option>
+            <option id="A-Level" value="A-Level">A-Level</option>
+        </select>
     </div>
 
-    <div id = "avgElement" class = "avgElement" style="display: block;">
+    <div class="form-container" id="form-container">
+        <!-- Forms will be dynamically added here -->
+    </div>
+
+    <div id="avgElement" class="avgElement" style="display: block;">
         <p></p>
     </div>
 
@@ -75,167 +68,229 @@
         <canvas id="rateSelf" width="30vh" height="40vh"></canvas>
     </div>
 
-    <div class="AddComparison" id = "addComparison">
-        <button type="submit" style="margin-bottom: 10vh;"> Add New Thing to compare against  </button>
+    <div class="AddComparison" id="addComparison" style="font-size: 30px;margin-bottom: 10vh;">
+        <button type="button"> Add New Thing to compare against </button>
     </div>
 
 </body>
 <script>
-    document.getElementById('addComparison').addEventListener('click', addComponents);
+    document.getElementById('addComparison').addEventListener('click', addSelector);
 
     let slideIndex = 0;
-    document.getElementById('theForm').addEventListener('submit', function(event){
-    event.preventDefault();
+    let formCount = 0; // Global counter for unique form IDs
 
-    let formData = new FormData(this);
-    fetch('/submit', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('details').innerText = data.message;
-    })
-    .catch(error => {
-        document.getElementById('details').innerText = 'Error: ' + error;
-    });
-});
-
-let formCount = 0; // Global counter for unique form IDs
-
-function addComponents() {
-    formCount++;
-    let formId = 'theForm' + formCount;
-    let resultId = 'details' + formCount;
-
-    let form = document.createElement('form');
-    form.setAttribute('method', 'post');
-    form.setAttribute('action', '/submit');
-    form.setAttribute('id', formId);
-    form.classList.add('form');
-
-    let subjectLabel = document.createElement('label');
-    subjectLabel.textContent = 'Subject: ';
-    subjectLabel.setAttribute('for', 'subject');
-
-    let subjectInput = document.createElement('input');
-    subjectInput.setAttribute('type', 'text');
-    subjectInput.setAttribute('id', 'subject');
-    subjectInput.setAttribute('name', 'subject');
-
-    form.appendChild(subjectLabel);
-    form.appendChild(subjectInput);
-
-    let gradeLabel = document.createElement('label');
-    gradeLabel.textContent = 'Grade: ';
-    gradeLabel.setAttribute('for', 'grade');
-
-    let gradeInput = document.createElement('input');
-    gradeInput.setAttribute('type', 'text');
-    gradeInput.setAttribute('id', 'grade');
-    gradeInput.setAttribute('name', 'grade');
-
-    form.appendChild(gradeLabel);
-    form.appendChild(gradeInput);
-
-    let break1 = document.createElement('br');
-
-    const submitButton = document.createElement('button');
-    submitButton.setAttribute('type', 'submit');
-    submitButton.textContent = 'Submit';
-
-    form.appendChild(submitButton);
-    document.getElementById('form-container').appendChild(form);
-
-    document.getElementById('form-container').appendChild(break1);
-    document.getElementById('form-container').appendChild(break1);
-    document.getElementById('form-container').appendChild(break1);
-
-    // Add result div
-    let resultDiv = document.createElement('div');
-    resultDiv.setAttribute('class', 'result');
-    resultDiv.setAttribute('id', resultId);
-
-    let resultParagraph = document.createElement('p');
-    resultParagraph.setAttribute('id', 'result-text');
-    resultParagraph.style.display = 'none';
-
-    resultDiv.appendChild(resultParagraph);
-    document.getElementById('form-container').appendChild(resultDiv);
-
-    // Add event listener to the new form
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        let formData = new FormData(this);
-        fetch('/submit', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById(resultId).innerText = data.message;
-            getAverage()
-        })
-        .catch(error => {
-            document.getElementById(resultId).innerText = 'Error: ' + error;
-        });
-    });
-
-    console.log("Button Clicked");
-}
-
-function showSlides() {
-    let i;
-    let slides = document.getElementsByClassName("slideshowComponent");
-    for (i = 0; i < slides.length; i++) {
-        slides[i].style.display = "none";
-    }
-
-    slides[slideIndex].style.display = 'block';
-    slideIndex++;
-    if (slideIndex >= slides.length - 1) {
-        setTimeout(showSlides, 350);
-        slideIndex = slides.length - 1; // Keep "Everything" as the final slide
-    } else {
-        setTimeout(showSlides, 2000 / slideIndex);
-    }
-}
-
-function getAverage(){
-    let elements = document.getElementsByClassName('result');
-    const regex = /-?\d+(\.\d+)?/g;
-    let total = 0.0;
-    let count = 0;
-
-    for (let element of elements) {
-        console.log(element.textContent);
-        let match = element.textContent.match(regex);
-        if (match) {
-            let value = parseFloat(match[0]);
-            if (!isNaN(value)) {
-                total += value;
-                count++;
-            }
-            console.log(value);
+    function formChange(formChooser) {
+        let formType = formChooser.value;
+        if (formType === "IQ") {
+            addIQForm(formChooser);
+        } else if (formType === "A-Level") {
+            addComponents(formChooser);
         }
     }
 
-    if (count > 0){
-        let avgElementNum = total / count;
-        console.log("New Average", avgElementNum)
-        
-        avgElement = document.getElementById("avgElement");
+    function addIQForm(formChooser) {
+        formCount++;
+        let formId = 'theForm' + formCount;
+        let resultId = 'details' + formCount;
 
-        avgElement.textContent = "Your Avg across all is " + avgElementNum;
+        let form = document.createElement('form');
+        form.setAttribute('method', 'post');
+        form.setAttribute('action', '/submit');
+        form.setAttribute('id', formId);
+        form.classList.add('form');
 
+        let formTypeInput = document.createElement('input');
+        formTypeInput.setAttribute('type', 'hidden');
+        formTypeInput.setAttribute('name', 'formType');
+        formTypeInput.setAttribute('value', 'IQ');
+        form.appendChild(formTypeInput);
 
+        let iqLabel = document.createElement('label');
+        iqLabel.textContent = 'IQ: ';
+        iqLabel.setAttribute('for', 'iq');
+        form.appendChild(iqLabel);
+
+        let iqInput = document.createElement('input');
+        iqInput.setAttribute('type', 'text');
+        iqInput.setAttribute('id', 'iq');
+        iqInput.setAttribute('name', 'grade');
+        form.appendChild(iqInput);
+
+        const submitButton = document.createElement('button');
+        submitButton.setAttribute('type', 'submit');
+        submitButton.textContent = 'Submit';
+        form.appendChild(submitButton);
+
+        formChooser.parentNode.replaceChild(form, formChooser);
+
+        let resultDiv = document.createElement('div');
+        resultDiv.setAttribute('class', 'result');
+        resultDiv.setAttribute('id', resultId);
+
+        let resultParagraph = document.createElement('p');
+        resultParagraph.setAttribute('id', 'result-text');
+        resultParagraph.style.display = 'none';
+        resultDiv.appendChild(resultParagraph);
+
+        document.getElementById('form-container').appendChild(resultDiv);
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+            fetch('/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(resultId).innerText = data.message;
+                getAverage();
+            })
+            .catch(error => {
+                document.getElementById(resultId).innerText = 'Error: ' + error;
+            });
+        });
     }
-}
 
+    function addComponents(formChooser) {
+        formCount++;
+        let formId = 'theForm' + formCount;
+        let resultId = 'details' + formCount;
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    showSlides();
-});
+        let form = document.createElement('form');
+        form.setAttribute('method', 'post');
+        form.setAttribute('action', '/submit');
+        form.setAttribute('id', formId);
+        form.classList.add('form');
+
+        let formTypeInput = document.createElement('input');
+        formTypeInput.setAttribute('type', 'hidden');
+        formTypeInput.setAttribute('name', 'formType');
+        formTypeInput.setAttribute('value', 'A-Level');
+        form.appendChild(formTypeInput);
+
+        let subjectLabel = document.createElement('label');
+        subjectLabel.textContent = 'Subject: ';
+        subjectLabel.setAttribute('for', 'subject');
+        form.appendChild(subjectLabel);
+
+        let subjectInput = document.createElement('input');
+        subjectInput.setAttribute('type', 'text');
+        subjectInput.setAttribute('id', 'subject');
+        subjectInput.setAttribute('name', 'subject');
+        form.appendChild(subjectInput);
+
+        let gradeLabel = document.createElement('label');
+        gradeLabel.textContent = 'Grade: ';
+        gradeLabel.setAttribute('for', 'grade');
+        form.appendChild(gradeLabel);
+
+        let gradeInput = document.createElement('input');
+        gradeInput.setAttribute('type', 'text');
+        gradeInput.setAttribute('id', 'grade');
+        gradeInput.setAttribute('name', 'grade');
+        form.appendChild(gradeInput);
+
+        const submitButton = document.createElement('button');
+        submitButton.setAttribute('type', 'submit');
+        submitButton.textContent = 'Submit';
+        form.appendChild(submitButton);
+
+        formChooser.parentNode.replaceChild(form, formChooser);
+
+        let resultDiv = document.createElement('div');
+        resultDiv.setAttribute('class', 'result');
+        resultDiv.setAttribute('id', resultId);
+
+        let resultParagraph = document.createElement('p');
+        resultParagraph.setAttribute('id', 'result-text');
+        resultParagraph.style.display = 'none';
+        resultDiv.appendChild(resultParagraph);
+
+        document.getElementById('form-container').appendChild(resultDiv);
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+            fetch('/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(resultId).innerText = data.message;
+                getAverage();
+            })
+            .catch(error => {
+                document.getElementById(resultId).innerText = 'Error: ' + error;
+            });
+        });
+    }
+
+    function addSelector() {
+        formCount++;
+        let selectorId = 'formSelector' + formCount;
+
+        let selectorDiv = document.createElement('div');
+        selectorDiv.setAttribute('id', selectorId);
+
+        let select = document.createElement('select');
+        select.setAttribute('onchange', 'formChange(this)');
+        select.innerHTML = `
+            <option id="Null" value="Null"></option>
+            <option id="IQ" value="IQ">IQ</option>
+            <option id="A-Level" value="A-Level">A-Level</option>
+        `;
+
+        selectorDiv.appendChild(select);
+        document.getElementById('form-container').appendChild(selectorDiv);
+    }
+
+    function showSlides() {
+        let i;
+        let slides = document.getElementsByClassName("slideshowComponent");
+        for (i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+
+        slides[slideIndex].style.display = 'block';
+        slideIndex++;
+        if (slideIndex >= slides.length - 1) {
+            setTimeout(showSlides, 350);
+            slideIndex = slides.length - 1; // Keep "Everything" as the final slide
+        } else {
+            setTimeout(showSlides, 2000 / slideIndex);
+        }
+    }
+
+    function getAverage() {
+        let elements = document.getElementsByClassName('result');
+        const regex = /-?\d+(\.\d+)?/g;
+        let total = 0.0;
+        let count = 0;
+
+        for (let element of elements) {
+            let match = element.textContent.match(regex);
+            if (match) {
+                let value = parseFloat(match[0]);
+                if (!isNaN(value)) {
+                    total += value;
+                    count++;
+                }
+            }
+        }
+
+        if (count > 0) {
+            let avgElementNum = total / count;
+            let avgElement = document.getElementById("avgElement");
+            avgElement.textContent = "Your Avg across all is the top " + avgElementNum + "%";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        showSlides();
+    });
 </script>
 </html>
