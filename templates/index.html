@@ -53,6 +53,7 @@
             <option id="Null" value="Null"></option>
             <option id="IQ" value="IQ">IQ</option>
             <option id="A-Level" value="A-Level">A-Level</option>
+            <option id="Height" value="Height">Height</option>
         </select>
     </div>
 
@@ -85,6 +86,8 @@
             addIQForm(formChooser);
         } else if (formType === "A-Level") {
             addComponents(formChooser);
+        } else if (formType === "Height") {
+            addComponents(formChooser)
         }
     }
 
@@ -151,6 +154,72 @@
                 document.getElementById(resultId).innerText = 'Error: ' + error;
             });
         });
+    }
+
+    function addHeightForm(formChooser){
+        formCount++;
+        let formId = 'theForm' + formCount;
+        let resultId = 'details' + formCount;
+
+        let form = document.createElement('form');
+        form.setAttribute('method', 'post');
+        form.setAttribute('action', '/submit');
+        form.setAttribute('id', formId);
+        form.classList.add('form');
+
+        let formTypeInput = document.createElement('input');
+        formTypeInput.setAttribute('type', 'hidden');
+        formTypeInput.setAttribute('name', 'formType');
+        formTypeInput.setAttribute('value', 'Height');
+        form.appendChild(formTypeInput);
+
+        let heightLabel = document.createElement('label');
+        iqLabel.textContent = 'HEIGHT: ';
+        iqLabel.setAttribute('for', 'height');
+        form.appendChild(iqLabel);
+
+        let heightInput = document.createElement('input');
+        iqInput.setAttribute('type', 'text');
+        iqInput.setAttribute('id', 'height');
+        iqInput.setAttribute('name', 'height');
+        form.appendChild(heightInput);
+
+        const submitButton = document.createElement('button');
+        submitButton.setAttribute('type', 'submit');
+        submitButton.textContent = 'Submit';
+        form.appendChild(submitButton);
+
+        formChooser.parentNode.replaceChild(form, formChooser);
+
+        let resultDiv = document.createElement('div');
+        resultDiv.setAttribute('class', 'result');
+        resultDiv.setAttribute('id', resultId);
+
+        let resultParagraph = document.createElement('p');
+        resultParagraph.setAttribute('id', 'result-text');
+        resultParagraph.style.display = 'none';
+        resultDiv.appendChild(resultParagraph);
+
+        document.getElementById('form-container').appendChild(resultDiv);
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let formData = new FormData(this);
+            fetch('/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(resultId).innerText = data.message;
+                getAverage();
+            })
+            .catch(error => {
+                document.getElementById(resultId).innerText = 'Error: ' + error;
+            });
+        });
+
     }
 
     function addComponents(formChooser) {
@@ -242,6 +311,7 @@
             <option id="Null" value="Null"></option>
             <option id="IQ" value="IQ">IQ</option>
             <option id="A-Level" value="A-Level">A-Level</option>
+            <option id="Height" value="Height">Height</option>
         `;
 
         selectorDiv.appendChild(select);

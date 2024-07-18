@@ -40,7 +40,7 @@ func multipleForms(subject string, grade string, formType string) (Response, gra
 	// Determine which CSV file to use based on form type
 	if formType == "IQ" {
 		details.Percent, record, details.Subject = convertToCsv("iq.csv", details.Subject, details.Grade, formType)
-	} else {
+	} else if formType=="A-Level"{
 		details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade, formType)
 	}
 
