@@ -87,7 +87,7 @@
         } else if (formType === "A-Level") {
             addComponents(formChooser);
         } else if (formType === "Height") {
-            addComponents(formChooser)
+            addHeightForm(formChooser)
         }
     }
 
@@ -156,7 +156,7 @@
         });
     }
 
-    function addHeightForm(formChooser){
+    function addHeightForm(formChooser) {
         formCount++;
         let formId = 'theForm' + formCount;
         let resultId = 'details' + formCount;
@@ -173,16 +173,43 @@
         formTypeInput.setAttribute('value', 'Height');
         form.appendChild(formTypeInput);
 
+        let genderLabel = document.createElement('label');
+        genderLabel.textContent = 'Gender: ';
+        genderLabel.setAttribute('for', 'gender');
+        form.appendChild(genderLabel);
+
+        let genderSelect = document.createElement('select');
+        genderSelect.setAttribute('id', 'gender');
+        genderSelect.setAttribute('name', 'gender');
+
+        let optionMale = document.createElement('option');
+        optionMale.setAttribute('value', 'male');
+        optionMale.textContent = 'Male';
+        genderSelect.appendChild(optionMale);
+
+        let optionFemale = document.createElement('option');
+        optionFemale.setAttribute('value', 'female');
+        optionFemale.textContent = 'Female';
+        genderSelect.appendChild(optionFemale);
+
+        let optionOther = document.createElement('option');
+        optionOther.setAttribute('value', 'other');
+        optionOther.textContent = 'Other';
+        genderSelect.appendChild(optionOther);
+
+        form.appendChild(genderSelect);
+
         let heightLabel = document.createElement('label');
-        iqLabel.textContent = 'HEIGHT: ';
-        iqLabel.setAttribute('for', 'height');
-        form.appendChild(iqLabel);
+        heightLabel.textContent = 'Height: ';
+        heightLabel.setAttribute('for', 'height');
+        form.appendChild(heightLabel);
 
         let heightInput = document.createElement('input');
-        iqInput.setAttribute('type', 'text');
-        iqInput.setAttribute('id', 'height');
-        iqInput.setAttribute('name', 'height');
+        heightInput.setAttribute('type', 'text');
+        heightInput.setAttribute('id', 'height');
+        heightInput.setAttribute('name', 'height');
         form.appendChild(heightInput);
+
 
         const submitButton = document.createElement('button');
         submitButton.setAttribute('type', 'submit');
@@ -219,9 +246,7 @@
                 document.getElementById(resultId).innerText = 'Error: ' + error;
             });
         });
-
     }
-
     function addComponents(formChooser) {
         formCount++;
         let formId = 'theForm' + formCount;
