@@ -199,17 +199,29 @@
 
         form.appendChild(genderSelect);
 
+        let ageLabel = document.createElement('label');
+        ageLabel.textContent = 'Age: ';
+        ageLabel.setAttribute('for', 'age');
+        form.appendChild(ageLabel);
+
+        let ageInput = document.createElement('input');
+        ageInput.setAttribute('type', 'number');
+        ageInput.setAttribute('id', 'age');
+        ageInput.setAttribute('name', 'subject');
+        form.appendChild(ageInput);
+
         let heightLabel = document.createElement('label');
-        heightLabel.textContent = 'Height: ';
+        heightLabel.textContent = 'Height (in inches): ';
         heightLabel.setAttribute('for', 'height');
         form.appendChild(heightLabel);
 
         let heightInput = document.createElement('input');
-        heightInput.setAttribute('type', 'text');
+        heightInput.setAttribute('type', 'number');
         heightInput.setAttribute('id', 'height');
-        heightInput.setAttribute('name', 'height');
+        heightInput.setAttribute('name', 'grade');
         form.appendChild(heightInput);
 
+        
 
         const submitButton = document.createElement('button');
         submitButton.setAttribute('type', 'submit');
@@ -312,7 +324,10 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => 
+            {
+                response.json()
+            })
             .then(data => {
                 document.getElementById(resultId).innerText = data.message;
                 getAverage();

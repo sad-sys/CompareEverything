@@ -19,6 +19,12 @@ type gradeInfo struct {
 	Percent float64
 }
 
+type heightInfo struct {
+	Age    string
+	Gender string
+	Height string
+}
+
 // Response struct holds the message to be returned as JSON response
 type Response struct {
 	Message string `json:"message"`
@@ -40,8 +46,11 @@ func multipleForms(subject string, grade string, formType string) (Response, gra
 	// Determine which CSV file to use based on form type
 	if formType == "IQ" {
 		details.Percent, record, details.Subject = convertToCsv("iq.csv", details.Subject, details.Grade, formType)
-	} else if formType=="A-Level"{
+	} else if formType == "A-Level" {
 		details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade, formType)
+	}
+	if formType == "Height" {
+		details.Percent, record, details.Subject = convertToCsvHeight("height.csv", details.Subject, details.Grade, formType)
 	}
 
 	// Print the record and details for debugging
@@ -132,6 +141,29 @@ func findIQ(record []string, iq string) float64 {
 	return percentiles[len(iqThresholds)]
 }
 
+func findHeightPercentile(record []string, height string) float64 {
+	heightVal, err := strconv.Atoi(height)
+	if err != nil {
+		fmt.Println("Error converting height value to integer:", err)
+		return -1.0
+	}
+
+	// Assuming height starts at column 3 and increments
+	for idx, col := range record[3:] {
+		heightThreshold, err := strconv.Atoi(col)
+		if err != nil {
+			fmt.Println("Error converting height column to integer:", err)
+			continue
+		}
+		if heightVal <= heightThreshold {
+			percentile, _ := strconv.ParseFloat(record[idx+4], 64) // Assuming percentile values are one column after height thresholds
+			return percentile
+		}
+	}
+
+	return -1.0
+}
+
 // findGrade finds the percentile for the given grade from the CSV record
 func findGrade(record []string, grade string) float64 {
 	grades := map[string]int{
@@ -207,6 +239,50 @@ func convertToCsv(fileName string, subject string, grade string, formType string
 	}
 
 	return -1.0, nil, subject
+}
+
+func convertToCsvHeight(fileName string, age string, height string, formType string) (float64, []string, string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Printf("Error opening file %s: %v\n", fileName, err)
+		return -1.0, nil, "nil"
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		fmt.Printf("Error reading CSV file %s: %v\n", fileName, err)
+		return -1.0, nil, age
+	}
+
+	headers := records[0] // First row should be headers
+	heightColumnIndex := -1
+
+	// Find the index for the height input
+	for index, header := range headers {
+		headerValue, _ := strconv.ParseFloat(header, 64) // Assuming headers are float values representing heights
+		inputValue, _ := strconv.ParseFloat(height, 64)
+		if inputValue <= headerValue {
+			heightColumnIndex = index
+			break
+		}
+	}
+
+	// Return the percentile based on height
+	if heightColumnIndex != -1 {
+		for _, record := range records[1:] { // Skip headers
+			if record[1] == "Height" {
+				percentile, err := strconv.ParseFloat(record[heightColumnIndex], 64)
+				if err == nil {
+					return percentile, record, "Height"
+				}
+				break
+			}
+		}
+	}
+
+	return -1.0, nil, age
 }
 
 func main() {

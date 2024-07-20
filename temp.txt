@@ -1,0 +1,155 @@
+type SubmissionInfo struct {
+	Type    string
+	Subject string
+	Value   string
+	Gender  string
+	Age     int
+}
+
+type Response struct {
+	Message string `json:"message"`
+}
+
+type ServerData struct {
+	IQData      map[string]float64
+	LevelData   map[string]map[string]float64
+	HeightStats map[string]map[int]float64
+}
+
+func parseCSVForIQ(fileName string) (map[string]float64, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	data := make(map[string]float64)
+	for _, record := range records {
+		if percentile, err := strconv.ParseFloat(record[1], 64); err == nil {
+			data[record[0]] = percentile
+		}
+	}
+	return data, nil
+}
+
+func parseCSVForALevel(fileName string) (map[string]map[string]float64, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	data := make(map[string]map[string]float64)
+	for _, record := range records {
+		subject := record[0]
+		if data[subject] == nil {
+			data[subject] = make(map[string]float64)
+		}
+		if percentile, err := strconv.ParseFloat(record[2], 64); err == nil {
+			data[subject][record[1]] = percentile
+		}
+	}
+	return data, nil
+}
+
+func parseHeightCSV(filePath string) (map[string]map[int]float64, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	data := make(map[string]map[int]float64)
+	for _, record := range records {
+		gender := record[0]
+		if data[gender] == nil {
+			data[gender] = make(map[int]float64)
+		}
+		for i, height := range record[1:] {
+			if h, err := strconv.ParseFloat(height, 64); err == nil {
+				data[gender][i+16] = h // assuming ages start at 16
+			}
+		}
+	}
+	return data, nil
+}
+
+func formHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read form values
+	subType := r.FormValue("type")
+	subject := r.FormValue("subject")
+	value := r.FormValue("value")
+	gender := r.FormValue("gender")
+	age, _ := strconv.Atoi(r.FormValue("age"))
+
+	// Data processing
+	var response Response
+	switch subType {
+	case "IQ":
+		iqData, _ := parseCSVForIQ("iq.csv")
+		if percentile, ok := iqData[value]; ok {
+			response.Message = fmt.Sprintf("Your IQ of %s is in the top %.2f%%", value, percentile)
+		} else {
+			response.Message = "Invalid IQ value"
+		}
+	case "A-Level":
+		levelData, _ := parseCSVForALevel("alevel.csv")
+		if subjects, ok := levelData[subject]; ok {
+			if percentile, ok := subjects[value]; ok {
+				response.Message = fmt.Sprintf("Your grade %s in %s is in the top %.2f%%", value, subject, percentile)
+			} else {
+				response.Message = "Invalid grade"
+			}
+		} else {
+			response.Message = "Subject not found"
+		}
+	case "Height":
+		heightStats, _ := parseHeightCSV("height.csv")
+		if stats, ok := heightStats[gender]; ok {
+			if meanHeight, ok := stats[age]; ok {
+				userHeight, _ := strconv.ParseFloat(value, 64)
+				if userHeight > meanHeight {
+					response.Message = fmt.Sprintf("Your height of %.1f cm is above the average of %.1f cm for your age and gender.", userHeight, meanHeight)
+				} else {
+					response.Message = fmt.Sprintf("Your height of %.1f cm is below the average of %.1f cm for your age and gender.", userHeight, meanHeight)
+				}
+			} else {
+				response.Message = "Age group not found."
+			}
+		} else {
+			response.Message = "Gender not found."
+		}
+	}
+
+	// Send JSON response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func main() {
+	http.HandleFunc("/submit", formHandler)
+	http.ListenAndServe(":8080", nil)
+}
