@@ -20,6 +20,13 @@ Women ,460,611,584,602,550,439,337,3584,,,,
 All adults ,935,1162,1134,1182,1067,856,613,6949,,,,
 
 
+
+ID,Type,Male,64.8,66.3,67.0,68.2,70.2,71.6,72.8,73.7,74
+ID,Type,Female,60.6,61.5,62.2,62.7,64.2,65.3,66.0,66.5,68.1
+0001,Percentile,OtherNumber,5,10,15,25,50,75,85,90,95th
+
+
+
 Table 8. Height in inches for children and adolescents aged 2–19 years and number of examined persons, mean, standard error of the
 mean, and selected percentiles, by sex and age: United States, 2007–2010
 Number of Standard Percentile

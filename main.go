@@ -44,6 +44,7 @@ func multipleForms(subject string, grade string, formType string) (Response, gra
 		details.Percent, record, details.Subject = convertToCsv("results.csv", details.Subject, details.Grade, formType)
 	}
 	if formType == "Height" {
+		fmt.Println("FORMTYPE HEIGHT", details.Subject, details.Grade, formType)
 		details.Percent, record, details.Subject = convertToCsvHeight("height.csv", details.Subject, details.Grade, formType)
 	}
 
@@ -135,6 +136,53 @@ func findIQ(record []string, iq string) float64 {
 	return percentiles[len(iqThresholds)]
 }
 
+func findHeight(record []string, gender string, height string) float64 {
+	percentiles := []int{95, 90, 85, 75, 50, 25, 15, 10, 5}
+	maleHeightThresholds := []float64{64.8, 66.3, 67.0, 68.2, 70.2, 71.6, 72.8, 73.7, 74}
+	femaleHeightThresholds := []float64{60.6, 61.5, 62.2, 62.7, 64.2, 65.3, 66.0, 66.5, 68.1}
+
+	heightValue, err := strconv.ParseFloat(height, 64)
+	if err != nil {
+		fmt.Println(err)
+		return 0.0 // Return if there's an error parsing the height
+	}
+
+	if gender == "MALE" {
+		fmt.Println("Processing Male Height")
+		// Find the percentile
+		for i := 0; i < len(maleHeightThresholds); i++ {
+			if heightValue < maleHeightThresholds[i] {
+				if i == 0 {
+					fmt.Println("THRESHOLD, PERCENTILE", maleHeightThresholds[i], percentiles[i])
+					return float64(percentiles[i])
+				}
+				fmt.Println("THRESHOLD, PERCENTILE", maleHeightThresholds[i-1], percentiles[i-1])
+				return float64(percentiles[i-1])
+			}
+		}
+		// If the height is equal to or greater than the last threshold
+		fmt.Println("THRESHOLD, PERCENTILE", maleHeightThresholds[len(maleHeightThresholds)-1], percentiles[len(percentiles)-1])
+		return float64(percentiles[len(percentiles)-1])
+	} else if gender == "FEMALE" {
+		fmt.Println("Processing female Height")
+		// Find the percentile
+		for i := 0; i < len(femaleHeightThresholds); i++ {
+			if heightValue < femaleHeightThresholds[i] {
+				if i == 0 {
+					fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i], percentiles[i])
+					return float64(percentiles[i])
+				}
+				fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i-1], percentiles[i-1])
+				return float64(percentiles[i-1])
+			}
+		}
+		// If the height is equal to or greater than the last threshold
+		fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[len(femaleHeightThresholds)-1], percentiles[len(percentiles)-1])
+		return float64(percentiles[len(percentiles)-1])
+	}
+	return 0.0
+}
+
 // findGrade finds the percentile for the given grade from the CSV record
 func findGrade(record []string, grade string) float64 {
 	grades := map[string]int{
@@ -212,7 +260,8 @@ func convertToCsv(fileName string, subject string, grade string, formType string
 	return -1.0, nil, subject
 }
 
-func convertToCsvHeight(fileName string, age string, height string, formType string) (float64, []string, string) {
+func convertToCsvHeight(fileName string, gender string, height string, formType string) (float64, []string, string) {
+	// Open the CSV file
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Printf("Error opening file %s: %v\n", fileName, err)
@@ -220,47 +269,31 @@ func convertToCsvHeight(fileName string, age string, height string, formType str
 	}
 	defer file.Close()
 
+	// Read the CSV file
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Printf("Error reading CSV file %s: %v\n", fileName, err)
-		return -1.0, nil, ""
+		return -1.0, nil, gender
 	}
 
-	// Assuming the first record is the header and columns represent height thresholds
-	headers := records[0]
-	inputHeight, err := strconv.ParseFloat(height, 64)
-	if err != nil {
-		fmt.Println("Error converting input height to float:", err)
-		return -1.0, nil, ""
-	}
+	// Print the records for debugging
+	fmt.Printf("Records from %s: %v\n", fileName, records)
 
-	var percentile float64 = -1
-	foundThreshold := false
-	for i := 3; i < len(headers); i++ { // Start at index 3 to skip ID, Type, Subject
-		threshold, err := strconv.ParseFloat(headers[i], 64)
-		if err != nil {
-			continue // Skip if the header is not a valid float
-		}
-		if inputHeight <= threshold {
-			if i > 3 { // Ensure there is a previous threshold
-				percentile, err = strconv.ParseFloat(records[1][i-1], 64) // Use the percentile of the previous threshold
-			} else {
-				percentile, err = strconv.ParseFloat(records[1][i], 64) // Use the current percentile if it's the first column
-			}
-			foundThreshold = true
-			break
+	for _, record := range records {
+		fmt.Printf("Processing record: %v\n", record)
+
+		if searchRecords(gender, record) {
+			counter := findHeight(record, gender, height)
+			gender = record[2]
+			return counter, record, gender
+		} else {
+			fmt.Println("Not Found")
 		}
 	}
 
-	// If no threshold was found that the height exceeds, use the last threshold's percentile
-	if !foundThreshold {
-		percentile, _ = strconv.ParseFloat(records[1][len(headers)-1], 64)
-	}
-
-	return percentile, records[1], "Height"
+	return -1.0, nil, gender
 }
-
 func main() {
 	// Serve static files
 	fs := http.FileServer(http.Dir("./static"))
