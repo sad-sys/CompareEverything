@@ -324,18 +324,16 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => 
-            {
-                response.json()
-            })
+            .then(response => response.json()) // Convert response to JSON
             .then(data => {
-                document.getElementById(resultId).innerText = data.message;
+                document.getElementById(resultId).innerText = data.message; // Update the result text with the message
                 getAverage();
             })
             .catch(error => {
-                document.getElementById(resultId).innerText = 'Error: ' + error;
+                document.getElementById(resultId).innerText = 'Error: ' + error; // Handle any errors
             });
         });
+
     }
 
     function addSelector() {

@@ -19,12 +19,6 @@ type gradeInfo struct {
 	Percent float64
 }
 
-type heightInfo struct {
-	Age    string
-	Gender string
-	Height string
-}
-
 // Response struct holds the message to be returned as JSON response
 type Response struct {
 	Message string `json:"message"`
@@ -93,7 +87,7 @@ func formHandler(w http.ResponseWriter, r *http.Request) {
 	// Process the form and get the response and details
 	response, details := multipleForms(subject, grade, formType)
 	allDetails = append(allDetails, details)
-
+	fmt.Printf("Response being sent: %+v\n", response)
 	// Set response header and encode the response as JSON
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -139,29 +133,6 @@ func findIQ(record []string, iq string) float64 {
 	// If the IQ value is less than the lowest threshold, return the highest percentile (closest to 100)
 	fmt.Println("IQ value is less than the lowest threshold, returning highest percentile")
 	return percentiles[len(iqThresholds)]
-}
-
-func findHeightPercentile(record []string, height string) float64 {
-	heightVal, err := strconv.Atoi(height)
-	if err != nil {
-		fmt.Println("Error converting height value to integer:", err)
-		return -1.0
-	}
-
-	// Assuming height starts at column 3 and increments
-	for idx, col := range record[3:] {
-		heightThreshold, err := strconv.Atoi(col)
-		if err != nil {
-			fmt.Println("Error converting height column to integer:", err)
-			continue
-		}
-		if heightVal <= heightThreshold {
-			percentile, _ := strconv.ParseFloat(record[idx+4], 64) // Assuming percentile values are one column after height thresholds
-			return percentile
-		}
-	}
-
-	return -1.0
 }
 
 // findGrade finds the percentile for the given grade from the CSV record
@@ -253,36 +224,41 @@ func convertToCsvHeight(fileName string, age string, height string, formType str
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Printf("Error reading CSV file %s: %v\n", fileName, err)
-		return -1.0, nil, age
+		return -1.0, nil, ""
 	}
 
-	headers := records[0] // First row should be headers
-	heightColumnIndex := -1
+	// Assuming the first record is the header and columns represent height thresholds
+	headers := records[0]
+	inputHeight, err := strconv.ParseFloat(height, 64)
+	if err != nil {
+		fmt.Println("Error converting input height to float:", err)
+		return -1.0, nil, ""
+	}
 
-	// Find the index for the height input
-	for index, header := range headers {
-		headerValue, _ := strconv.ParseFloat(header, 64) // Assuming headers are float values representing heights
-		inputValue, _ := strconv.ParseFloat(height, 64)
-		if inputValue <= headerValue {
-			heightColumnIndex = index
+	var percentile float64 = -1
+	foundThreshold := false
+	for i := 3; i < len(headers); i++ { // Start at index 3 to skip ID, Type, Subject
+		threshold, err := strconv.ParseFloat(headers[i], 64)
+		if err != nil {
+			continue // Skip if the header is not a valid float
+		}
+		if inputHeight <= threshold {
+			if i > 3 { // Ensure there is a previous threshold
+				percentile, err = strconv.ParseFloat(records[1][i-1], 64) // Use the percentile of the previous threshold
+			} else {
+				percentile, err = strconv.ParseFloat(records[1][i], 64) // Use the current percentile if it's the first column
+			}
+			foundThreshold = true
 			break
 		}
 	}
 
-	// Return the percentile based on height
-	if heightColumnIndex != -1 {
-		for _, record := range records[1:] { // Skip headers
-			if record[1] == "Height" {
-				percentile, err := strconv.ParseFloat(record[heightColumnIndex], 64)
-				if err == nil {
-					return percentile, record, "Height"
-				}
-				break
-			}
-		}
+	// If no threshold was found that the height exceeds, use the last threshold's percentile
+	if !foundThreshold {
+		percentile, _ = strconv.ParseFloat(records[1][len(headers)-1], 64)
 	}
 
-	return -1.0, nil, age
+	return percentile, records[1], "Height"
 }
 
 func main() {
