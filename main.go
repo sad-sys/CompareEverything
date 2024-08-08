@@ -176,6 +176,18 @@ func findHeight(record []string, gender string, height string) float64 {
 				return float64(percentiles[i-1])
 			}
 		}
+	} else if gender == "OTHER" {
+		fmt.Println("Processing other height")
+		for i := 0; i < len(femaleHeightThresholds); i++ {
+			if heightValue < femaleHeightThresholds[i] {
+				if i == 0 {
+					fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i], percentiles[i])
+					return float64(percentiles[i])
+				}
+				fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i-1], percentiles[i-1])
+				return float64(percentiles[i-1])
+			}
+		}
 		// If the height is equal to or greater than the last threshold
 		fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[len(femaleHeightThresholds)-1], percentiles[len(percentiles)-1])
 		return float64(percentiles[len(percentiles)-1])

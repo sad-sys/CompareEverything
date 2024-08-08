@@ -10,9 +10,7 @@
     <title>Check Yourself</title>
 </head>
 <style>
-    .AddComparison:hover {
-        background-color: #3b88d5;
-    }
+
 </style>
 <body>
     <h1>Check Yourself</h1>
@@ -69,7 +67,7 @@
         <canvas id="rateSelf" width="30vh" height="40vh"></canvas>
     </div>
 
-    <div class="AddComparison" id="addComparison" style="font-size: 30px;margin-bottom: 10vh;">
+    <div class="AddComparison" id="addComparison" style="font-size: 30px;margin-bottom: 10vh; ">
         <button type="button"> Add New Thing to compare against </button>
     </div>
 
@@ -199,6 +197,7 @@
 
         form.appendChild(genderSelect);
 
+    /*
         let ageLabel = document.createElement('label');
         ageLabel.textContent = 'Age: ';
         ageLabel.setAttribute('for', 'age');
@@ -209,7 +208,8 @@
         ageInput.setAttribute('id', 'age');
         ageInput.setAttribute('name', 'gender');
         form.appendChild(ageInput);
-
+    -->
+    */
         let heightLabel = document.createElement('label');
         heightLabel.textContent = 'Height (in inches): ';
         heightLabel.setAttribute('for', 'height');
