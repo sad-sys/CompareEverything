@@ -140,6 +140,7 @@ func findHeight(record []string, gender string, height string) float64 {
 	percentiles := []int{95, 90, 85, 75, 50, 25, 15, 10, 5}
 	maleHeightThresholds := []float64{64.8, 66.3, 67.0, 68.2, 70.2, 71.6, 72.8, 73.7, 74}
 	femaleHeightThresholds := []float64{60.6, 61.5, 62.2, 62.7, 64.2, 65.3, 66.0, 66.5, 68.1}
+	otherHeightThresholds := []float64{62.7, 63.5, 64.5, 65.7, 67.2, 68.3, 69.0, 69.5, 71.1}
 
 	heightValue, err := strconv.ParseFloat(height, 64)
 	if err != nil {
@@ -178,13 +179,13 @@ func findHeight(record []string, gender string, height string) float64 {
 		}
 	} else if gender == "OTHER" {
 		fmt.Println("Processing other height")
-		for i := 0; i < len(femaleHeightThresholds); i++ {
-			if heightValue < femaleHeightThresholds[i] {
+		for i := 0; i < len(otherHeightThresholds); i++ {
+			if heightValue < otherHeightThresholds[i] {
 				if i == 0 {
-					fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i], percentiles[i])
+					fmt.Println("THRESHOLD, PERCENTILE", otherHeightThresholds[i], percentiles[i])
 					return float64(percentiles[i])
 				}
-				fmt.Println("THRESHOLD, PERCENTILE", femaleHeightThresholds[i-1], percentiles[i-1])
+				fmt.Println("THRESHOLD, PERCENTILE", otherHeightThresholds[i-1], percentiles[i-1])
 				return float64(percentiles[i-1])
 			}
 		}
